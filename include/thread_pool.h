@@ -30,7 +30,7 @@ public:
         // 创建_thread_num个线程
         for (int i = 0; i < _thread_num; ++i) {
 
-            std::cout << "creating the " << i + 1 << " thread" << std::endl;
+            std::cout << "creating " << i + 1 << " thread" << std::endl;
 
             // 写任务类，其中函数为静态，存储任务的数据类型为双向链表
             assert(pthread_create(&_threads[i], NULL, _work_routine, _p_thread_task_container) == 0);

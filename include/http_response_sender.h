@@ -40,8 +40,6 @@ extern const std::string server_root = "/var/www/html";
 #define BAD_REQUEST_RESPONSE ""
 #define Not_ACCEPTABLE_RESPONSE ""
 #define NOT_FOUND_RESPONSE ""
-// TODO: 需要在utils中写一个根据文件名读取文件的通用函数，
-// 给以上调用，输入各自的HTML资源名
 
 // 一般字段
 enum GENERAL_FIELDS {
@@ -115,8 +113,8 @@ private:
 // cur working stage:
     RESPONSE_STAGE cur_working_stage;
     
-// server support content-type;
-    std::vector<std::string> support_content_type;
+// server support content-type: provided by server;
+    static std::vector<std::string> support_content_type;
     
 // general fields
     std::vector<GENERAL_FIELDS> _general_fields = {
@@ -140,10 +138,37 @@ private:
     // 全局应该只有唯一一个http_code 发生任何错误，应该修改之
     HTTP_UTILS::HTTPCODE http_code;     
 public:
-    Http_Response_Sender(const std::vector<std::string> &_support_content_type):
-        cur_working_stage(RS_LINES), __file_address(NULL), \
-        support_content_type(_support_content_type) {
+// constructor
+    Http_Response_Sender():
+        cur_working_stage(RS_LINES), __file_address(NULL) {
 
+    }
+
+// copy constructor
+    Http_Response_Sender(const Http_Response_Sender& rhs):resp_header(rhs.resp_header), \
+         resp_lines(rhs.resp_lines), resp_body(rhs.resp_body), \
+         cur_working_stage(rhs.cur_working_stage), \
+         _general_fields(rhs._general_fields), \
+         _check_fields(rhs._check_fields), \
+         http_code(rhs.http_code) {
+        
+        memcpy(__file_address, rhs.__file_address, sizeof(rhs.__file_address));
+
+        memcpy(&__file_stat, &rhs.__file_stat, sizeof(__file_stat));   
+    }
+
+// destructor
+    ~Http_Response_Sender() {
+
+        delete __file_address;
+        __file_address = NULL;
+        memset(&__file_stat, 0, sizeof(__file_stat));
+        cur_working_stage = RS_LINES;
+        clear_data();
+    }
+
+    static void set_support_content_type(const std::vector<std::string> &_support_content_type) {
+        support_content_type = std::move(_support_content_type);
     }
 
     // 整个响应报文，用于给线程向客户端发送响应报文

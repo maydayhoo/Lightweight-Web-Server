@@ -47,11 +47,33 @@ private:
     PARSE_STAGE cur_woking_stage;
     PARSE_LINE_STATE cur_line_parse_state;
 
+// final parse state.
     HTTP_UTILS::HTTPCODE http_code;
 public:
+// constructor
     Http_Request_Parser(): cur_check_idx(0), req_buffer_end_idx(0), \
         cur_woking_stage(PS_HEADER) {
 
+    }
+
+// copy constructor
+    Http_Request_Parser(const Http_Request_Parser& rhs): req_method(rhs.req_method), \
+         req_url(rhs.req_url), req_http_version(rhs.req_http_version), \
+         key_val(rhs.key_val), req_body(rhs.req_body), \
+         cur_woking_stage(rhs.cur_woking_stage), \
+         cur_line_parse_state(rhs.cur_line_parse_state), \
+         http_code(rhs.http_code) {
+            
+        cur_check_idx = rhs.cur_check_idx;
+        req_buffer_end_idx = rhs.req_buffer_end_idx;
+        std::string req_buffer_to_parse; 
+    }
+
+// destructor
+    ~Http_Request_Parser() {
+        cur_check_idx = 0;
+        req_buffer_end_idx = 0;
+        cur_woking_stage = PS_HEADER;
     }
 
     /**

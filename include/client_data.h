@@ -11,26 +11,24 @@
 
 struct ClientData {
     // constructor
-    ClientData(int clientfd = -1, const std::vector<std::string> &_support_content_type): _read_buf_end_idx(0),\
+    ClientData(int clientfd = -1): _read_buf_end_idx(0),\
              _send_buf_end_idx(0), _clientfd(clientfd), \ 
-             _should_close(false),  hrs(_support_content_type){
+             _should_close(false),  hrp(), hrs() {
 
         memset(_readbuf, 0, sizeof(_readbuf));
     }
 
-    // copy constructor
-    ClientData(const ClientData& rhs): hrs(rhs.hrs) {
-        memcpy(_readbuf, rhs._readbuf, strlen(rhs._readbuf));
+// copy constructor
+    ClientData(const ClientData& rhs): hrp(rhs.hrp), hrs(rhs.hrs) {
+
+        memcpy(_readbuf, rhs._readbuf, sizeof(rhs._readbuf));
         _read_buf_end_idx = rhs._read_buf_end_idx;
         _send_buf_end_idx = rhs._send_buf_end_idx;
         _should_close = rhs._should_close;
         _clientfd = rhs._clientfd;
-        //TODO:
-        // Http_Request_Parser的拷贝构造和析构
-        // Http_Response_Sender的拷贝构造和析构
     }
 
-    // destructor
+// destructor
     ~ClientData() {
         memset(_readbuf, 0, sizeof(_readbuf));
         _read_buf_end_idx = 0;
@@ -38,6 +36,7 @@ struct ClientData {
         _should_close = false;
         _clientfd = -1;
     }
+
     char _readbuf[READ_BUF_SZ]; // 用于接收recv的数据
     int _read_buf_end_idx = 0;  // _readbuf的有效字符个数
     int _send_buf_end_idx = 0;  // 发送response buf的起点

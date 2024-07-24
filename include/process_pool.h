@@ -67,8 +67,9 @@ class ProcessPool {
 private:
     ProcessPool(int listenfd, work_routine_t work_routine, \
             int process_number = 8): \
-        _listen_fd(listenfd), _process_num(process_number), \
-        _process_idx(-1), _thread_pool(work_routine, &thread_task_container) {
+        _listen_fd(listenfd), \
+        _process_num(process_number), \
+        _process_idx(-1) {
 
         // check valid input
         assert(0 < _process_num && _process_num <= MAX_PROCESS_NUM);
@@ -107,13 +108,13 @@ private:
     }
 public:
     // 进程池的静态方法，通过这里创建单例线程池
-    static ProcessPool create(int listenfd, sig_hander handler, \
+    static ProcessPool* create(int listenfd, \
             work_routine_t work_routine, int process_number = 8) {
         if (!Instance) {
-            Instance = new ProcessPool(listenfd, handler, work_routine, \
+            Instance = new ProcessPool(listenfd, work_routine, \
                 process_number);
         }
-        return *Instance;
+        return Instance;
     }
 
     // 进程工作前的准备工作
@@ -144,23 +145,26 @@ public:
     }
 
     // 线程工作函数 - 拦路虎
-    void run() {
+    void run(int thread_num) {
 
         if (_process_idx == -1) {   // 父进程的工作内容
 
             run_father();
         }else {                     // 子进程的工作内容
 
-            run_child();   
+            run_child(thread_num);   
         }
     }
 
     // 子进程真正的工作逻辑
-    void run_child() {
+    void run_child(int thread_num = 8) {
 
         // 进程开始工作前的准备工作
         init();
 
+        // 每个进程都有自己的一个任务容器以及线程池为任务服务
+        ThreadPoolTaskContainer<ClientData_t> thread_task_container;  
+        ThreadPool<ClientData_t> _thread_pool(work_routine, &thread_task_container, thread_num);
         _thread_pool.create();  // 在进入子进程以后，创建thread_num个线程
 
         // 和父进程之间的管道 - 父进程通过管道，来告诉子进程可以accept
@@ -172,6 +176,7 @@ public:
         // 客户信息表 
         // - 下标为clientfd 
         // - 用于存储每个客户读缓冲区/HTTP_Parser/HTTP_Sender
+        // - use ClientData_t default constructor
         vector<ClientData_t> client_data(MAX_CLIENT_NUM);
 
         // 子进程开始工作
@@ -402,8 +407,6 @@ private:    // 全部子进程都会有一份下列的拷贝，不管是否是�
     vector<Process> process_pool;
     int _process_idx;                   // 区分子进程和父进程的一个标志
     static int _sig_pipefd[2];          // 每个进程内实现统一信号事件源的管道
-    ThreadPool<ClientData_t> _thread_pool;            // 每个进程都有自己的线程池
-    ThreadPoolTaskContainer<ClientData_t> thread_task_container;  // 每个进程都有自己的一个任务容器
     Heap<std::pair<int, int>> _process_heap;  // 给主进程使用，虽然每个进程都会有一份，但其他进程不使用 
 private:
 
